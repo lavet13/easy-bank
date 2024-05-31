@@ -1,20 +1,20 @@
 import { keepPreviousData, useSuspenseQuery } from "@tanstack/react-query";
 import { graphql } from "../../gql";
-import { PostsQuery } from "../../gql/graphql";
+import { LoansQuery } from "../../gql/graphql";
 import { InitialDataOptions } from "../../utils/graphql/initial-data-options";
 import client from "../../graphql-client";
 import { ConsoleLog } from "../../utils/debug/console-log";
 
-type UsePostsProps = {
+type UseLoansProps = {
   take?: number;
   before?: number | null;
   after?: number | null;
   query?: string;
 };
 
-export const usePosts = (
-  { take, after, before, query }: UsePostsProps,
-  options?: InitialDataOptions<PostsQuery>
+export const useLoans = (
+  { take, after, before, query }: UseLoansProps,
+  options?: InitialDataOptions<any>
 ) => {
   const input: Record<string, any> = {};
   ConsoleLog({ before, after });
@@ -33,13 +33,16 @@ export const usePosts = (
   }
   ConsoleLog({ input });
 
-  const posts = graphql(`
-    query Posts($input: PostsInput!) {
-      posts(input: $input) {
+  const loans = graphql(`
+    query Loans ($input: LoansInput!) {
+      loans(input: $input) {
         edges {
           id
-          title
-          preview(size: MEDIUM)
+          term
+          amount
+          status
+          createdAt
+          updatedAt
         }
         pageInfo {
           endCursor
@@ -52,11 +55,11 @@ export const usePosts = (
     }
   `);
 
-  return useSuspenseQuery<PostsQuery>({
-    queryKey: [(posts.definitions[0] as any).name.value, { input }],
+  return useSuspenseQuery<LoansQuery>({
+    queryKey: [(loans.definitions[0] as any).name.value, { input }],
     queryFn: async () => {
       // await new Promise(resolve => setTimeout(() => resolve(0), 10000000));
-      return client.request(posts, { input });
+      return client.request(loans, { input });
     },
     placeholderData: keepPreviousData,
     ...options,

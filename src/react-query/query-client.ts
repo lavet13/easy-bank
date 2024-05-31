@@ -1,9 +1,4 @@
-import { MutationCache, QueryCache, QueryClient } from '@tanstack/react-query';
-import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
-import {
-  persistQueryClient,
-  removeOldestQuery,
-} from '@tanstack/react-query-persist-client';
+import { QueryCache, QueryClient } from '@tanstack/react-query';
 import { createStandaloneToast } from '@chakra-ui/react';
 import { isGraphQLRequestError } from '../utils/graphql/is-graphql-request-error';
 import { ConsoleLog } from '../utils/debug/console-log';
@@ -34,18 +29,6 @@ const queryClient = new QueryClient({
       }
     },
   }),
-  // mutationCache: new MutationCache({
-  //   onError(error) {
-  //     if (isGraphQLRequestError(error)) {
-  //       toastIdRef.current = toast({
-  //         title: 'Logout',
-  //         description: `${error.response.errors[0].message}`,
-  //         status: 'error',
-  //         isClosable: true,
-  //       });
-  //     }
-  //   }
-  // }),
   defaultOptions: {
     queries: {
       staleTime: 1000 * 10, // it was 15 min
@@ -53,16 +36,5 @@ const queryClient = new QueryClient({
     },
   },
 });
-
-// const persister = createSyncStoragePersister({
-//   storage: window !== undefined ? (window as Window).localStorage : undefined,
-//   retry: removeOldestQuery,
-// });
-//
-// persistQueryClient({
-//   queryClient,
-//   persister,
-//   maxAge: 1000 * 60 * 60 * 24,
-// });
 
 export default queryClient;
