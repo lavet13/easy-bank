@@ -1,7 +1,7 @@
 import { FC } from 'react';
 
 import Select, { SelectProps } from './select';
-import useIsClient from '../common/hooks/use-is-client';
+import useIsClient from '../utils/ssr/use-is-client';
 
 const SelectWrapper: FC<SelectProps> = props => {
   const { isClient, key } = useIsClient();

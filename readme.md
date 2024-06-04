@@ -46,21 +46,16 @@ to bundle CSS into JS file.
 
 ## Implemented:
 - Cursor-based pagination by id
-- Infinite scroll
 - JWT(cookies)
 
 ## Planning:
 - Cursor should have been used as createdAt instead of id
-- Sort posts with ascending order or descending
-- Bidirectional infinite scrolling
+- Sort posts with ascending or descending order
 
 ## Incomplete:
-- MDX
 - refresh token and access token
 - Invalidation and optimistic updates using useMutation
 - File upload(graphql?? express??)
-- First subscription(probably EventStream, not sure)
-- Dockerize the app
 - Query Key Factory
 
 <!-- This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules. -->

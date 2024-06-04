@@ -32,7 +32,7 @@ const Schema = z.object({
 });
 
 const Login: FC = () => {
-  const initialValues: InitialValues = {
+  const initialValues: z.infer<typeof Schema> = {
     login: '',
     password: '',
   };

@@ -5,22 +5,22 @@ import {
 } from '@chakra-ui/react';
 
 type ButtonProps = {
-  onClick: () => void;
-  hasMore: boolean;
+  onClick?: () => void;
+  hasMore?: boolean;
 } & ChakraButtonProps;
 
-const Button: FC<ButtonProps> = ({ onClick, hasMore, ...props }) => {
+const Button: FC<ButtonProps> = ({ hasMore, ...props }) => {
   const [isPending, startTransition] = useTransition();
 
   const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     startTransition(() => {
-      onClick(e);
+      props.onClick?.(e);
     });
   };
 
   return (
     <ChakraButton
-      onClick={handleClick}
+      {...(props.onClick ? { onClick: handleClick } : {})}
       isDisabled={isPending || hasMore}
       isLoading={isPending}
       {...props}
