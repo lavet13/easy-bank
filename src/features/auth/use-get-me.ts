@@ -1,8 +1,8 @@
-import { useQuery } from "@tanstack/react-query";
-import { graphql } from "../../gql";
-import { MeQuery } from "../../gql/graphql";
-import client from "../../graphql-client";
-import { InitialDataOptions } from "../../utils/graphql/initial-data-options";
+import { useQuery } from '@tanstack/react-query';
+import { graphql } from '../../gql';
+import { MeQuery } from '../../gql/graphql';
+import client from '../../graphql-client';
+import { InitialDataOptions } from '../../utils/graphql/initial-data-options';
 
 export const useGetMe = (options?: InitialDataOptions<MeQuery>) => {
   const me = graphql(`
@@ -21,11 +21,13 @@ export const useGetMe = (options?: InitialDataOptions<MeQuery>) => {
     queryFn: async () => {
       return client.request(me);
     },
-    refetchOnMount: true,
+    refetchOnMount: false,
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
+    retry: false,
+    meta: {
+      toastEnabled: false,
+    },
     ...options,
   });
 };
-
-

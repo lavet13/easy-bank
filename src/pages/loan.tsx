@@ -43,20 +43,25 @@ import Button from '../components/button';
 import { FC, useEffect } from 'react';
 import { TableContainer } from '@chakra-ui/react';
 import { useLoans } from '../features/loans';
-import { useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { parseIntSafe } from '../utils/helpers/parse-int-safe';
 import { ConsoleLog } from '../utils/debug/console-log';
 import { ru } from 'date-fns/locale';
 import { formatDistanceToNow } from 'date-fns';
-import { useDeleteLoan, useLoanById } from '../features/loanById';
+import { useDeleteLoan, useLoanById } from '../features/loan-by-id';
 import { Form, Formik, FormikHelpers } from 'formik';
 import { z } from 'zod';
 import { toFormikValidationSchema } from 'zod-formik-adapter';
 import NumberInput from '../components/number-input';
 import SelectWrapper from '../components/select-wrapper';
 import TextareaInput from '../components/textarea-input';
-import { useUpdateLoan } from '../features/loanById/use-update-loan';
-import { LoanStatus, MutationUpdateLoanArgs, MutationDelLoanArgs } from '../gql/graphql';
+import { useUpdateLoan } from '../features/loan-by-id/use-update-loan';
+import {
+  LoanStatus,
+  MutationUpdateLoanArgs,
+  MutationDelLoanArgs,
+} from '../gql/graphql';
+import { useGetMe } from '../features/auth';
 
 type HandleSubmitProps = (
   values: InitialValues,
@@ -155,8 +160,8 @@ const statusValues = [
 ] as const;
 
 const Schema = z.object({
-  term: numberFormatValuesSchema.refine(values => values.floatValue! <= 12, {
-    message: 'Не больше 12 месяцев',
+  term: numberFormatValuesSchema.refine(values => values.floatValue! <= 60, {
+    message: 'Не больше 5 лет(60 месяцев)',
   }),
   amount: numberFormatValuesSchema,
   status: z.enum(statusValues, { required_error: 'Нужно выбрать статус!' }),
@@ -168,6 +173,16 @@ type FormSchema = Omit<z.infer<typeof Schema>, 'status'>;
 type InitialValues = FormSchema & { status: StatusKey | '' };
 
 const Loan: FC = () => {
+  const { data: getMeResult } = useGetMe();
+  const navigate = useNavigate();
+  const { pathname, search } = useLocation();
+
+  useEffect(() => {
+    if(!getMeResult?.me) {
+      navigate(`/login?redirect=${pathname}${search}`);
+    }
+  }, [getMeResult]);
+
   const initialValues: InitialValues = {
     term: { formattedValue: '', value: '', floatValue: undefined },
     amount: { formattedValue: '', value: '', floatValue: undefined },
@@ -195,7 +210,7 @@ const Loan: FC = () => {
         amount: +values.amount.value!,
         status: values.status,
         term: +values.term.value!,
-      }
+      },
     };
 
     await updateLoan({ ...payload });
@@ -206,8 +221,16 @@ const Loan: FC = () => {
     handleEditClose();
   };
 
-  const { isOpen: isEditOpen, onOpen: onEditOpen, onClose: onEditClose } = useDisclosure();
-  const { isOpen: isDelOpen, onOpen: onDelOpen, onClose: onDelClose } = useDisclosure();
+  const {
+    isOpen: isEditOpen,
+    onOpen: onEditOpen,
+    onClose: onEditClose,
+  } = useDisclosure();
+  const {
+    isOpen: isDelOpen,
+    onOpen: onDelOpen,
+    onClose: onDelClose,
+  } = useDisclosure();
   const [searchParams, setSearchParams] = useSearchParams();
   const before = searchParams.get('before') ?? null;
   const after = searchParams.get('after') ?? null;
@@ -219,11 +242,18 @@ const Loan: FC = () => {
     error,
     isPending,
     refetch: refetchLoans,
-  } = useLoans({
-    take: 2,
-    after: parseIntSafe(after!),
-    before: parseIntSafe(before!),
-  });
+  } = useLoans(
+    {
+      take: 12,
+      after: parseIntSafe(after!),
+      before: parseIntSafe(before!),
+    },
+    {
+      meta: {
+        toastEnabled: false,
+      },
+    }
+  );
 
   const {
     data: loanByIdResult,
@@ -334,139 +364,138 @@ const Loan: FC = () => {
 
   return (
     <>
-      <Container maxW={'auto'}>
-        {isPending ? (
-          <TableContainer>
-            <Table variant='simple' size='md'>
-              <Thead>
-                <Tr>
-                  <Th>Создано</Th>
-                  <Th>Обновлено</Th>
-                  <Th isNumeric>Срок кредита(в месяцах)</Th>
-                  <Th isNumeric>Сумма кредита</Th>
-                  <Th>Статус</Th>
-                  <Th>Действия</Th>
-                </Tr>
-              </Thead>
-              <Tbody>
-                <Tr>
-                  <Td>...</Td>
-                  <Td>...</Td>
-                  <Td isNumeric>...</Td>
-                  <Td isNumeric>...</Td>
-                  <Td>...</Td>
+      {isPending ? (
+        <TableContainer>
+          <Table variant='simple' size='md'>
+            <Thead>
+              <Tr>
+                <Th>Создано</Th>
+                <Th>Обновлено</Th>
+                <Th isNumeric>Срок кредита(в месяцах)</Th>
+                <Th isNumeric>Сумма кредита</Th>
+                <Th>Статус</Th>
+                <Th>Действия</Th>
+              </Tr>
+            </Thead>
+            <Tbody>
+              <Tr>
+                <Td>...</Td>
+                <Td>...</Td>
+                <Td isNumeric>...</Td>
+                <Td isNumeric>...</Td>
+                <Td>...</Td>
+                <Td>
+                  <Flex gap='1'>
+                    <IconButton
+                      colorScheme='blue'
+                      aria-label='Edit loan'
+                      icon={<Icon as={HiPencil} boxSize='5' />}
+                    />
+                    <IconButton
+                      colorScheme='red'
+                      aria-label='Delete loan'
+                      icon={<Icon as={HiOutlineTrash} boxSize='5' />}
+                    />
+                  </Flex>
+                </Td>
+              </Tr>
+            </Tbody>
+          </Table>
+        </TableContainer>
+      ) : loansResult.loans.edges.length !== 0 ? (
+        <TableContainer>
+          <Table variant='simple' size={{ base: 'sm', '2xl': 'md' }}>
+            <Thead>
+              <Tr>
+                <Th>Создано</Th>
+                <Th>Обновлено</Th>
+                <Th isNumeric>Срок кредита(в месяцах)</Th>
+                <Th isNumeric>Сумма кредита</Th>
+                <Th>Статус</Th>
+                <Th>Действия</Th>
+              </Tr>
+            </Thead>
+            <Tbody>
+              {loansResult.loans.edges.map(l => (
+                <Tr key={l.id}>
+                  <Td>
+                    {formatDistanceToNow(new Date(l.createdAt), {
+                      addSuffix: true,
+                      locale: ru,
+                      includeSeconds: true,
+                    })}
+                  </Td>
+                  <Td>
+                    {formatDistanceToNow(new Date(l.updatedAt), {
+                      addSuffix: true,
+                      locale: ru,
+                      includeSeconds: true,
+                    })}
+                  </Td>
+                  <Td isNumeric>{l.term}</Td>
+                  <Td isNumeric>{l.amount}</Td>
+                  <Td>{statusMap[l.status]}</Td>
                   <Td>
                     <Flex gap='1'>
                       <IconButton
                         colorScheme='blue'
                         aria-label='Edit loan'
                         icon={<Icon as={HiPencil} boxSize='5' />}
+                        onClick={handleEditOpen(l.id)}
                       />
                       <IconButton
                         colorScheme='red'
                         aria-label='Delete loan'
                         icon={<Icon as={HiOutlineTrash} boxSize='5' />}
+                        onClick={handleDeleteOpen(l.id)}
                       />
                     </Flex>
                   </Td>
                 </Tr>
-              </Tbody>
-            </Table>
-          </TableContainer>
-        ) : loansResult.loans.edges.length !== 0 ? (
-          <TableContainer>
-            <Table variant='simple' size={{ base: 'sm', '2xl': 'md' }}>
-              <Thead>
-                <Tr>
-                  <Th>Создано</Th>
-                  <Th>Обновлено</Th>
-                  <Th isNumeric>Срок кредита(в месяцах)</Th>
-                  <Th isNumeric>Сумма кредита</Th>
-                  <Th>Статус</Th>
-                  <Th>Действия</Th>
-                </Tr>
-              </Thead>
-              <Tbody>
-                {loansResult.loans.edges.map(l => (
-                  <Tr key={l.id}>
-                    <Td>
-                      {formatDistanceToNow(new Date(l.createdAt), {
-                        addSuffix: true,
-                        locale: ru,
-                        includeSeconds: true,
-                      })}
-                    </Td>
-                    <Td>
-                      {formatDistanceToNow(new Date(l.updatedAt), {
-                        addSuffix: true,
-                        locale: ru,
-                        includeSeconds: true,
-                      })}
-                    </Td>
-                    <Td isNumeric>{l.term}</Td>
-                    <Td isNumeric>{l.amount}</Td>
-                    <Td>{statusMap[l.status]}</Td>
-                    <Td>
-                      <Flex gap='1'>
-                        <IconButton
-                          colorScheme='blue'
-                          aria-label='Edit loan'
-                          icon={<Icon as={HiPencil} boxSize='5' />}
-                          onClick={handleEditOpen(l.id)}
-                        />
-                        <IconButton
-                          colorScheme='red'
-                          aria-label='Delete loan'
-                          icon={<Icon as={HiOutlineTrash} boxSize='5' />}
-                          onClick={handleDeleteOpen(l.id)}
-                        />
-                      </Flex>
-                    </Td>
-                  </Tr>
-                ))}
-              </Tbody>
-            </Table>
-          </TableContainer>
-        ) : (
-          <Center>
-            <Heading>Нет данных :(</Heading>
-          </Center>
-        )}
-        {isPending
-          ? null
-          : loansResult.loans.edges.length !== 0 &&
-            loansResult.loans.pageInfo.hasNextPage && (
-              <Flex
-                py={3}
-                justify={'center'}
-                direction={['column', 'row']}
-                gap={2}
+              ))}
+            </Tbody>
+          </Table>
+        </TableContainer>
+      ) : (
+        <Center>
+          <Heading>Нет данных :(</Heading>
+        </Center>
+      )}
+      {isPending
+        ? null
+        : loansResult.loans.edges.length !== 0 &&
+          (loansResult.loans.pageInfo.hasNextPage ||
+            loansResult.loans.pageInfo.hasPreviousPage) && (
+            <Flex
+              py={3}
+              justify={'center'}
+              direction={['column', 'row']}
+              gap={2}
+            >
+              <Button
+                variant={'ghost'}
+                onClick={() => {
+                  fetchPreviousPage();
+                }}
+                hasMore={!loansResult.loans.pageInfo.hasPreviousPage}
+                leftIcon={<Icon as={HiArrowNarrowLeft} />}
+                spinnerPlacement='start'
+                loadingText='Предыдущая'
               >
-                <Button
-                  variant={'ghost'}
-                  onClick={() => {
-                    fetchPreviousPage();
-                  }}
-                  hasMore={!loansResult.loans.pageInfo.hasPreviousPage}
-                  leftIcon={<Icon as={HiArrowNarrowLeft} />}
-                  spinnerPlacement='start'
-                  loadingText='Предыдущая'
-                >
-                  Предыдущая
-                </Button>
-                <Button
-                  variant='ghost'
-                  onClick={fetchNextPage}
-                  hasMore={!loansResult.loans.pageInfo.hasNextPage}
-                  rightIcon={<Icon as={HiArrowNarrowRight} />}
-                  loadingText='Следующая'
-                  spinnerPlacement='end'
-                >
-                  Следующая
-                </Button>
-              </Flex>
-            )}
-      </Container>
+                Предыдущая
+              </Button>
+              <Button
+                variant='ghost'
+                onClick={fetchNextPage}
+                hasMore={!loansResult.loans.pageInfo.hasNextPage}
+                rightIcon={<Icon as={HiArrowNarrowRight} />}
+                loadingText='Следующая'
+                spinnerPlacement='end'
+              >
+                Следующая
+              </Button>
+            </Flex>
+          )}
       <Modal size='xl' isOpen={isEditOpen} onClose={handleEditClose}>
         <ModalOverlay />
 
@@ -481,7 +510,7 @@ const Loan: FC = () => {
               </ModalHeader>
               <ModalCloseButton />
             </Box>
-            <ModalBody>
+            <ModalBody pb={5}>
               {/* For initial loading */}
               {fetchStatus === 'fetching' && status === 'pending' ? (
                 <Spinner />
@@ -506,7 +535,7 @@ const Loan: FC = () => {
                             value: `${loanByIdResult.loanById.amount}`,
                             floatValue: loanByIdResult.loanById.amount,
                           },
-                          comment: loanByIdResult.loanById.comment.text,
+                          comment: loanByIdResult.loanById.comment?.text ?? '',
                           status: loanByIdResult.loanById.status,
                         });
                     }, []);
@@ -537,7 +566,12 @@ const Loan: FC = () => {
                         />
                         <TextareaInput label='Комментарий' name='comment' />
 
-                        <Button isLoading={isSubmitting} mt={4} type='submit'>
+                        <Button
+                          w={['full', 'auto']}
+                          isLoading={isSubmitting}
+                          mt={4}
+                          type='submit'
+                        >
                           Подтвердить
                         </Button>
                       </Form>
@@ -560,19 +594,28 @@ const Loan: FC = () => {
               </ModalHeader>
               <ModalCloseButton />
             </Box>
-            <ModalBody>
-              Вы действительно хотите удалить кредит с идентификатором № {loanByIdResult?.loanById.id}
+            <ModalBody pb={5}>
+              Вы действительно хотите удалить кредит с идентификатором №{' '}
+              {loanByIdResult?.loanById.id}
             </ModalBody>
             <ModalFooter gap={'2'} flexDirection={['column', 'row']}>
-              <Button onClick={async () => {
-                const payload: MutationDelLoanArgs = {
-                  id: loanIdToDelete,
-                };
-                await deleteLoan({ ...payload });
-                refetchLoans();
-                handleDelClose();
-              }} alignSelf="stretch" colorScheme="red">Удалить</Button>
-              <Button onClick={handleDelClose} alignSelf="stretch">Отмена</Button>
+              <Button
+                onClick={async () => {
+                  const payload: MutationDelLoanArgs = {
+                    id: loanIdToDelete,
+                  };
+                  await deleteLoan({ ...payload });
+                  refetchLoans();
+                  handleDelClose();
+                }}
+                alignSelf='stretch'
+                colorScheme='red'
+              >
+                Удалить
+              </Button>
+              <Button onClick={handleDelClose} alignSelf='stretch'>
+                Отмена
+              </Button>
             </ModalFooter>
           </Stack>
         </ModalContent>

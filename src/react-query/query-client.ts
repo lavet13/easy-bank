@@ -10,6 +10,10 @@ const queryClient = new QueryClient({
     onError(error, query) {
       ConsoleLog({ state: query.state });
 
+      if(query.meta) {
+        if(query.meta.toastEnabled === false) return;
+      }
+
       if (isGraphQLRequestError(error)) {
         toast({
           title: 'Ошибка',

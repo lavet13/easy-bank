@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useRef } from 'react';
+import { Fragment, useEffect } from 'react';
 import {
   Button,
   ButtonGroup,
@@ -12,67 +12,32 @@ import {
   useTheme,
   Icon,
   SimpleGrid,
-  useToast,
-  ToastId,
 } from '@chakra-ui/react';
 import { useNavigate } from 'react-router-dom';
 import { FC } from 'react';
 import { HiMenu } from 'react-icons/hi';
-import { useGetMe, useLogout } from '../../features/auth';
-import queryClient from '../../react-query/query-client';
+import { useGetMe } from '../../features/auth';
+import { ConsoleLog } from '../../utils/debug/console-log';
+import AccountMenu from '../../components/account-menu';
 import { isGraphQLRequestError } from '../../utils/graphql/is-graphql-request-error';
+import queryClient from '../../react-query/query-client';
 
 const Header: FC = () => {
-  const toast = useToast();
-  const toastIdRef = useRef<ToastId | null>(null);
   const {
-    error: authError,
+    error,
     data: getMeResult,
-    isPending,
+    isPending: getMePending,
     isRefetching,
-  } = useGetMe({
-    retry: false,
-  });
+  } = useGetMe();
 
-  if(authError) {
-    if(isGraphQLRequestError(authError)) {
-      if(authError.response.errors[0].extensions.statusCode === 401) {
+  if (error) {
+    if (isGraphQLRequestError(error)) {
+      if (error.response.errors[0].extensions.statusCode === 401) {
         queryClient.setQueryData(['Me'], null);
-        console.error('Unauthorized');
+        console.warn('Unauthenticated!')
       }
     }
   }
-
-  const { mutate: logout } = useLogout({
-    onSuccess: () => {
-      queryClient.setQueryData(['Me'], null);
-
-      if (toastIdRef.current) {
-        toast.close(toastIdRef.current);
-      }
-      toastIdRef.current = toast({
-        title: 'Logout',
-        description: 'Успешно вышли из аккаунта! ᕦ(ò_óˇ)ᕤ',
-        status: 'success',
-        duration: 2000,
-        isClosable: true,
-      });
-    },
-    onError: error => {
-      if (isGraphQLRequestError(error)) {
-        if (toastIdRef.current) {
-          toast.close(toastIdRef.current);
-        }
-
-        toastIdRef.current = toast({
-          title: 'Logout',
-          description: `${error.response.errors[0].message}`,
-          status: 'error',
-          isClosable: true,
-        });
-      }
-    },
-  });
 
   const theme = useTheme();
   const navigate = useNavigate();
@@ -98,8 +63,29 @@ const Header: FC = () => {
 
   const isNotLargerAndIsOpen = !isLargerThanMd && isOpen;
 
-  const buttons = [
-    <Button
+  const buttons = getMePending ? [] : [
+    getMeResult?.me?.role === 'USER' ? <Button
+      onClick={() => {
+        navigate('/submit-loan');
+        onClose();
+      }}
+      variant='outline'
+      colorScheme={'blue'}
+      size={['md', null, 'sm']}
+    >
+      Оформить кредит
+    </Button> : null,
+    getMeResult?.me?.role === 'USER' ? <Button
+      onClick={() => {
+        navigate('/finances');
+        onClose();
+      }}
+      variant='ghost'
+      size={['md', null, 'sm']}
+    >
+      Финансы
+    </Button> : null,
+    getMeResult?.me?.role === 'ADMIN' ? <Button
       onClick={() => {
         navigate('/loan');
         onClose();
@@ -107,12 +93,12 @@ const Header: FC = () => {
       variant='ghost'
       size={['md', null, 'sm']}
     >
-      Кредит
-    </Button>,
+      Кредиты
+    </Button> : null,
     !getMeResult?.me ? (
       <Button
-        isLoading={isPending || isRefetching}
-        isDisabled={isPending || isRefetching}
+        isLoading={getMePending || isRefetching}
+        isDisabled={getMePending || isRefetching}
         onClick={() => {
           navigate('/login');
           onClose();
@@ -123,21 +109,9 @@ const Header: FC = () => {
         Войти
       </Button>
     ) : (
-      <Button
-        isLoading={isPending || isRefetching}
-        isDisabled={isPending || isRefetching}
-        onClick={() => {
-          logout();
-          navigate('/');
-          onClose();
-        }}
-        variant='solid'
-        size={['md']}
-      >
-        Выйти
-      </Button>
+      <AccountMenu onClose={onClose} />
     ),
-  ];
+  ].filter(Boolean);
 
   let content = (
     <Flex pt='1.5' align={'center'} minH={'58px'}>

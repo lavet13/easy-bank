@@ -1,4 +1,16 @@
-import { Box, Button, VStack, Text, Center } from '@chakra-ui/react';
+import {
+  Box,
+  Button,
+  VStack,
+  Text,
+  Center,
+  Container,
+  Alert,
+  AlertIcon,
+  AlertTitle,
+  AlertDescription,
+  Flex,
+} from '@chakra-ui/react';
 import { QueryErrorResetBoundary } from '@tanstack/react-query';
 import { FC, useEffect, useRef } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
@@ -30,18 +42,38 @@ const Layout: FC = () => {
                   : error.message;
 
                 return (
-                  <Center justifyContent='center' flex='1' w='full'>
-                    <Box alignSelf='center'>
-                      There was an error!{' '}
-                      <Button
-                        colorScheme='blue'
-                        variant='outline'
-                        onClick={() => resetErrorBoundary()}
+                  <Center flex='1'>
+                    <Container maxW={'600px'} flex='1'>
+                      <Alert
+                        status='error'
+                        variant='subtle'
+                        flexDirection='column'
+                        alignItems='center'
+                        justifyContent='center'
+                        textAlign='center'
+                        maxW='container.lg'
+                        mx='auto'
+                        py='5'
                       >
-                        Try again
-                      </Button>
-                      <Text>Error: {errorMessage}</Text>
-                    </Box>
+                        <AlertIcon boxSize='40px' mr={0} />
+                        <AlertTitle mt={4} mb={1} fontSize='lg'>
+                          Произошла ошибка!
+                        </AlertTitle>
+                        <AlertDescription maxWidth='sm'>
+                          {errorMessage}
+                        </AlertDescription>
+                        <Button
+                          mt={6}
+                          px={6}
+                          py={4}
+                          colorScheme='red'
+                          variant='outline'
+                          onClick={() => resetErrorBoundary()}
+                        >
+                          Повторить запрос
+                        </Button>
+                      </Alert>
+                    </Container>
                   </Center>
                 );
               }}

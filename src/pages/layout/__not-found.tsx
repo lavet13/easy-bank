@@ -6,9 +6,9 @@ const NotFound: FC = () => {
   return (
     <VStack spacing={4} sx={{ textAlign: 'center' }}>
       <Heading id='test' sx={{ textAlign: 'center' }}>
-        Not Found
+        404
       </Heading>
-      <Button as={RouterLink} to="/">Go Back</Button>
+      <Button as={RouterLink} to="/">На главную страницу</Button>
     </VStack>
   );
 };

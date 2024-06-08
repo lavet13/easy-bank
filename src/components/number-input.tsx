@@ -1,4 +1,4 @@
-import { FC, memo } from 'react';
+import { FC, memo, useEffect, useRef } from 'react';
 
 import {
   NumericFormat,
@@ -19,11 +19,18 @@ import { ConsoleLog } from '../utils/debug/console-log';
 type NumberInputProps = {
   name: string;
   label: string;
+  shouldFocus?: boolean;
 } & InputProps &
   NumericFormatProps;
 
 const NumberInput: FC<NumberInputProps> = memo(
-  ({ name, label, ...props }) => {
+  ({ name, label, shouldFocus, ...props }) => {
+    const inputRef = useRef<HTMLInputElement | null>(null);
+
+    useEffect(() => {
+      shouldFocus && inputRef.current?.focus();
+    }, [shouldFocus]);
+
     return (
       <FastField name={name}>
         {({
@@ -60,6 +67,7 @@ const NumberInput: FC<NumberInputProps> = memo(
                 valueIsNumericString
                 allowNegative={false}
                 onValueChange={handleOnValueChange}
+                getInputRef={inputRef}
               />
 
               <ErrorMessage name={name} component={FormErrorMessage} />
