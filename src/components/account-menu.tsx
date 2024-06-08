@@ -34,20 +34,9 @@ const AccountMenu: FC<AccountMenuProps> = ({ onClose }) => {
   const { isPending: getMePending, isRefetching } = useGetMe();
   const { isOpen, onOpen, onClose: onCloseMenu } = useDisclosure();
 
-  const { mutate: logout } = useLogout({
+  const { mutateAsync: logout } = useLogout({
     onSuccess: () => {
       queryClient.setQueryData(['Me'], null);
-
-      if (toastIdRef.current) {
-        toast.close(toastIdRef.current);
-      }
-      toastIdRef.current = toast({
-        title: 'Logout',
-        description: 'Успешно вышли из аккаунта! ᕦ(ò_óˇ)ᕤ',
-        status: 'success',
-        duration: 2000,
-        isClosable: true,
-      });
     },
     onError: error => {
       if (isGraphQLRequestError(error)) {
@@ -102,10 +91,46 @@ const AccountMenu: FC<AccountMenuProps> = ({ onClose }) => {
             Настройки
           </MenuItem>
           <MenuItem
-            onClick={() => {
-              logout();
-              navigate('/');
-              onClose();
+            onClick={async () => {
+              try {
+                await logout();
+                if (toastIdRef.current) {
+                  toast.close(toastIdRef.current);
+                }
+                toastIdRef.current = toast({
+                  title: 'Logout',
+                  description: 'Успешно вышли из аккаунта! ᕦ(ò_óˇ)ᕤ',
+                  status: 'success',
+                  duration: 2000,
+                  isClosable: true,
+                });
+                navigate('/');
+                onClose();
+              } catch (error) {
+                if (isGraphQLRequestError(error)) {
+                  if (toastIdRef.current) {
+                    toast.close(toastIdRef.current);
+                  }
+
+                  toastIdRef.current = toast({
+                    title: 'Logout',
+                    description: `${error.response.errors[0].message}`,
+                    status: 'error',
+                    isClosable: true,
+                  });
+                } else if (error instanceof Error) {
+                  if (toastIdRef.current) {
+                    toast.close(toastIdRef.current);
+                  }
+
+                  toastIdRef.current = toast({
+                    title: 'Логин',
+                    description: `${error.message}`,
+                    status: 'error',
+                    isClosable: true,
+                  });
+                }
+              }
             }}
           >
             Выйти
