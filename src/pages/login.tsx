@@ -40,7 +40,6 @@ const Schema = z.object({
   }),
 });
 
-
 const Login: FC = () => {
   const initialValues: z.infer<typeof Schema> = {
     login: '',
@@ -55,12 +54,10 @@ const Login: FC = () => {
   const { mutateAsync: loginUser } = useLogin();
 
   useEffect(() => {
-    if(getMeResult?.me) {
-      const redirect = queryString('redirect');
-
-      navigate(`${redirect || '/'}`);
+    if (getMeResult?.me) {
+      navigate('/');
     }
-  }, [getMeResult]);
+  }, []);
 
   const handleSubmit: HandleSubmitProps = async values => {
     if (isFormRefNotNull(formRef)) {
@@ -81,6 +78,7 @@ const Login: FC = () => {
           duration: 2000,
           isClosable: true,
         });
+        navigate('/');
       } catch (error: unknown) {
         if (isGraphQLRequestError(error)) {
           if (toastIdRef.current) {

@@ -27,17 +27,16 @@ import { useGetMe } from '../features/auth';
 const Finances: FC = () => {
   const { data: getMeResult } = useGetMe();
   const navigate = useNavigate();
-  const { pathname, search } = useLocation();
 
   const [searchParams, setSearchParams] = useSearchParams();
   const before = searchParams.get('before') ?? null;
   const after = searchParams.get('after') ?? null;
 
   useEffect(() => {
-    if(!getMeResult?.me) {
-      navigate(`/login?redirect=${pathname}${search}`);
+    if (!getMeResult?.me) {
+      navigate(`/login`);
     }
-  }, [getMeResult]);
+  }, []);
 
   const {
     data: financialHistoryResult,
@@ -102,10 +101,12 @@ const Finances: FC = () => {
     }
   };
 
-  if(error) {
-    if(isGraphQLRequestError(error)) {
-      if(error.response.errors[0].extensions.statusCode === 401) {
-        throw new GraphQLError('Не удалось получить финансовые операции. Необходимо авторизоваться.');
+  if (error) {
+    if (isGraphQLRequestError(error)) {
+      if (error.response.errors[0].extensions.statusCode === 401) {
+        throw new GraphQLError(
+          'Не удалось получить финансовые операции. Необходимо авторизоваться.'
+        );
       } else {
         throw error;
       }
@@ -137,8 +138,7 @@ const Finances: FC = () => {
             </Tbody>
           </Table>
         </TableContainer>
-      ) : financialHistoryResult.financialHistory.edges
-          .length !== 0 ? (
+      ) : financialHistoryResult.financialHistory.edges.length !== 0 ? (
         <TableContainer>
           <Table variant='simple' size={{ base: 'sm', '2xl': 'md' }}>
             <Thead>

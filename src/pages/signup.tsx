@@ -69,12 +69,10 @@ const Signup: FC = () => {
   const { refetch, data: getMeResult } = useGetMe();
 
   useEffect(() => {
-    if(getMeResult?.me) {
-      const redirect = queryString('redirect');
-
-      navigate(`${redirect || '/'}`);
+    if (getMeResult?.me) {
+      navigate(`/`);
     }
-  }, [getMeResult]);
+  }, []);
 
   const handleSubmit: HandleSubmitProps = async (values, actions) => {
     if (formRef.current !== null) {
@@ -106,6 +104,7 @@ const Signup: FC = () => {
           duration: 2000,
           isClosable: true,
         });
+        navigate('/');
       } catch (error: unknown) {
         if (isGraphQLRequestError(error)) {
           if (toastIdRef.current) {

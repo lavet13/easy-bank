@@ -175,13 +175,12 @@ type InitialValues = FormSchema & { status: StatusKey | '' };
 const Loan: FC = () => {
   const { data: getMeResult } = useGetMe();
   const navigate = useNavigate();
-  const { pathname, search } = useLocation();
 
   useEffect(() => {
-    if(!getMeResult?.me) {
-      navigate(`/login?redirect=${pathname}${search}`);
+    if (!getMeResult?.me) {
+      navigate(`/login`);
     }
-  }, [getMeResult]);
+  }, []);
 
   const initialValues: InitialValues = {
     term: { formattedValue: '', value: '', floatValue: undefined },

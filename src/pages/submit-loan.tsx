@@ -68,7 +68,6 @@ type InitialValues = z.infer<typeof Schema>;
 const SubmitLoan: FC = () => {
   const { data: getMeResult } = useGetMe();
   const navigate = useNavigate();
-  const { pathname, search } = useLocation();
   const [isReset, setIsReset] = useState(false);
 
   const handleReset = () => setIsReset(!isReset);
@@ -79,10 +78,10 @@ const SubmitLoan: FC = () => {
   };
 
   useEffect(() => {
-    if(!getMeResult?.me) {
-      navigate(`/login?redirect=${pathname}${search}`);
+    if (!getMeResult?.me) {
+      navigate(`/login`);
     }
-  }, [getMeResult]);
+  }, []);
 
   const { mutateAsync: createLoan, error, data } = useCreateLoan();
 
@@ -120,7 +119,8 @@ const SubmitLoan: FC = () => {
 
   let content: ReactNode | null = null;
 
-  content = <Center flex='1'>
+  content = (
+    <Center flex='1'>
       <Container maxW={'600px'} flex='1'>
         <Formik
           initialValues={initialValues}
@@ -156,6 +156,7 @@ const SubmitLoan: FC = () => {
         </Formik>
       </Container>
     </Center>
+  );
 
   if (data && !isReset) {
     content = (
