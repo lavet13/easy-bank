@@ -12,7 +12,7 @@ import { z } from 'zod';
 import { toFormikValidationSchema } from 'zod-formik-adapter';
 import Button from '../components/button';
 import NumberInput from '../components/number-input';
-import { useCreateLoan } from '../features/loan-by-id/use-create-loan';
+import { useCreateLoan } from '../features/loan-by-id';
 import { ConsoleLog } from '../utils/debug/console-log';
 import { MutationCreateLoanArgs } from '../gql/graphql';
 import { isGraphQLRequestError } from '../utils/graphql/is-graphql-request-error';
